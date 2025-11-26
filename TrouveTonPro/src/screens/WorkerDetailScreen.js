@@ -97,7 +97,7 @@ const WorkerDetailScreen = ({ route, navigation }) => {
      return (
         <View style={styles.centerContainer}>
           <Text style={styles.errorText}>❌ {error}</Text>
-          <Text style={styles.subErrorText}>Veuillez vérifier votre serveur Django.</Text>
+          <Text style={styles.subErrorText}>Veuillez vérifier votre serveur .</Text>
         </View>
      );
   }

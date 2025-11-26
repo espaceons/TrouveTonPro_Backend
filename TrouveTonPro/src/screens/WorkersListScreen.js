@@ -1,6 +1,7 @@
 // src/screens/WorkersListScreen.js
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import {useFocusEffect} from '@react-navigation/native';
 import { 
   View, 
   Text, 
@@ -62,30 +63,42 @@ const WorkersListScreen = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // LOGIQUE DE RÉCUPÉRATION DES DONNÉES DE L'API
-  useEffect(() => {
+// --- LOGIQUE DE RÉCUPÉRATION DES DONNÉES DE L'API (MISE À JOUR) ---
     const fetchWorkers = async () => {
-      try {
-        const response = await fetch(API_URL);
-        
-        if (!response.ok) {
-          throw new Error(`Erreur HTTP: ${response.status}`);
+        setIsLoading(true); // Remettre à true à chaque rappel
+        try {
+            const response = await fetch(API_URL);
+            
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            setWorkers(data); 
+            setError(null);
+        } catch (err) {
+            console.error("Erreur de l'API Django:", err);
+            setError(`Impossible de charger les données. Vérifiez le serveur Django (IP et port 8000).`);
+        } finally {
+            setIsLoading(false);
         }
-        
-        const data = await response.json();
-        setWorkers(data); 
-        setError(null);
-      } catch (err) {
-        console.error("Erreur de l'API Django:", err);
-        // Utilisation de la constante IP pour rendre l'erreur plus informative
-        setError(`Impossible de charger les données. Vérifiez l'adresse: ${IP}`); 
-      } finally {
-        setIsLoading(false);
-      }
     };
     
-    fetchWorkers();
-  }, []); 
+    // NOUVEAU HOOK : useFocusEffect
+    // Il exécute le callback (fetchWorkers) chaque fois que l'écran devient actif.
+    useFocusEffect(
+        // Le useCallback est nécessaire pour garantir que l'effet ne se ré-exécute 
+        // qu'en cas de nécessité, améliorant la performance.
+        useCallback(() => {
+            fetchWorkers();
+            
+            // Si vous retournez une fonction ici, elle sera exécutée lors de la 
+            // sortie de l'écran (un 'cleanup' ou nettoyage), ce qui est optionnel ici.
+            return () => {
+                // Optionnel : Annuler des requêtes en cours si besoin
+            };
+        }, []) // Le tableau de dépendances vide garantit qu'il s'exécute à chaque focus
+    );
 
   // LOGIQUE DE FILTRAGE ET TRI
   const allCategories = useMemo(() => {
